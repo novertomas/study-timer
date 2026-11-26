@@ -99,8 +99,7 @@
 
 <p id="count"></p>
 <button class="musicbtn" id="musicBtn" onclick="toggleMusic()">Music: off</button>
-<audio id="music" src="lofi.mp3" loop></audio>
-
+<audio id="music" src="05._Nafs_El_Hanen.mp3" onended="nextSong()"></audio>
 <div class="tasks">
   <h2>Tasks</h2>
   <div class="addrow">
@@ -109,6 +108,14 @@
   </div>
   <ul id="taskList"></ul>
 </div>
+  const songs = ["05._Nafs_El_Hanen.mp3", "06._Ya_3youn.mp3", "10.Ya_Wa7shny.mp3"];
+let songIndex = 0;
+function nextSong() {
+const audio = document.getElementById("music");
+songIndex = (songIndex + 1) % songs.length;
+audio.src = songs[songIndex];
+audio.play();
+}
 <script>
   const MODES = { study: 25 * 60, break: 5 * 60 };
   const CIRC = 2 * Math.PI * 115;
