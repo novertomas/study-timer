@@ -108,6 +108,8 @@
   </div>
   <ul id="taskList"></ul>
 </div>
+  
+<script>
   const songs = ["05._Nafs_El_Hanen.mp3", "06._Ya_3youn.mp3", "10.Ya_Wa7shny.mp3"];
 let songIndex = 0;
 function nextSong() {
@@ -116,7 +118,6 @@ songIndex = (songIndex + 1) % songs.length;
 audio.src = songs[songIndex];
 audio.play();
 }
-<script>
   const MODES = { study: 25 * 60, break: 5 * 60 };
   const CIRC = 2 * Math.PI * 115;
   let mode = "study";
