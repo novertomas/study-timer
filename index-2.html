@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Nover Study Timer</title>
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="theme-color" content="#0b0820">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Nover Study Timer">
+<meta name="description" content="Nover Study Timer - free Pomodoro study timer with music, stopwatch and tasks">
+<meta property="og:title" content="Nover Study Timer">
+<meta property="og:description" content="Focus 25 min. Rest 5 min.">
+<meta property="og:image" content="https://novertomas20-lang.github.io/study-timer/cover.png">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  :root {
+    --accent: #8b6cff; --accent2: #c07bff; --good: #3ddc97;
+    --glass: rgba(255,255,255,0.07); --line: rgba(255,255,255,0.14);
+  }
+  html, body { margin: 0; }
+  body {
+    min-height: 100vh; color: #fff; overflow-x: hidden;
+    font-family: -apple-system, "SF Pro Display", "Segoe UI", Roboto, sans-serif;
+    background: #0b0820;
+    display: flex; flex-direction: column; align-items: center;
+    padding: max(28px, env(safe-area-inset-top)) 16px 48px;
+  }
+  body.break { --accent: #2fd6a0; --accent2: #4aa8ff; }
+  /* aurora background */
+  .aurora { position: fixed; inset: 0; z-index: -1; overflow: hidden;
+    background: radial-gradient(1200px 700px at 50% -10%, #231552 0%, #0b0820 60%); }
+  .blob { position: absolute; width: 55vmax; height: 55vmax; border-radius: 50%;
+    filter: blur(90px); opacity: .45; animation: float 22s ease-in-out infinite; transition: background 1.2s; }
+  .b1 { background: var(--accent); top: -20vmax; left: -15vmax; }
+  .b2 { background: var(--accent2); bottom: -25vmax; right: -15vmax; animation-delay: -8s; }
+  .b3 { background: #1f6bff; width: 35vmax; height: 35vmax; top: 35%; left: 55%; opacity: .25; animation-delay: -14s; }
+  @keyframes float {
+    0%,100% { transform: translate(0,0) scale(1); }
+    33% { transform: translate(6vmax,4vmax) scale(1.12); }
+    66% { transform: translate(-4vmax,7vmax) scale(.94); }
+  }
+  .stars { position: fixed; inset: 0; z-index: -1; opacity: .5;
+    background-image:
+      radial-gradient(1.5px 1.5px at 12% 18%, #fff, transparent),
+      radial-gradient(1px 1px at 78% 12%, #fff, transparent),
+      radial-gradient(1.5px 1.5px at 88% 62%, #fff, transparent),
+      radial-gradient(1px 1px at 30% 80%, #fff, transparent),
+      radial-gradient(1px 1px at 55% 40%, #fff, transparent),
+      radial-gradient(1.5px 1.5px at 8% 55%, #fff, transparent); }
+
+  .app { width: min(440px, 100%); display: flex; flex-direction: column; gap: 18px; }
+  header { text-align: center; animation: fadeUp .7s ease both; }
+  h1 { margin: 0; font-size: 30px; font-weight: 800; letter-spacing: .5px;
+    background: linear-gradient(90deg, #fff, var(--accent2));
+    -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .sub { margin: 4px 0 0; font-size: 13px; opacity: .6; letter-spacing: 2px; text-transform: uppercase; }
+
+  .card { background: var(--glass); border: 1px solid var(--line); border-radius: 26px;
+    padding: 22px; backdrop-filter: blur(22px); -webkit-backdrop-filter: blur(22px);
+    box-shadow: 0 20px 60px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.12);
+    animation: fadeUp .7s ease both; }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(22px); } to { opacity: 1; transform: none; } }
+
+  .tabs { display: flex; gap: 6px; padding: 5px; border-radius: 16px; background: rgba(0,0,0,.25); margin-bottom: 20px; }
+  .tabs button { flex: 1; border: none; padding: 11px; border-radius: 12px; font-size: 14px; font-weight: 600;
+    color: rgba(255,255,255,.65); background: transparent; cursor: pointer; transition: all .25s; }
+  .tabs button.active { color: #fff; background: linear-gradient(135deg, var(--accent), var(--accent2));
+    box-shadow: 0 8px 24px rgba(0,0,0,.35); }
+
+  .ring { position: relative; width: 270px; height: 270px; margin: 0 auto; border-radius: 50%; }
+  .ring svg { transform: rotate(-90deg); display: block; }
+  circle { fill: none; stroke-width: 12; }
+  .bgc { stroke: rgba(255,255,255,.09); }
+  .fg { stroke: url(#grad); stroke-linecap: round; transition: stroke-dashoffset 1s linear;
+    filter: drop-shadow(0 0 10px var(--accent)); }
+  #time { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    font-size: 60px; font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: 1px;
+    text-shadow: 0 0 28px var(--accent); }
+  #modeLabel { font-size: 12px; font-weight: 600; letter-spacing: 3px; text-transform: uppercase; opacity: .6; margin-top: 2px; }
+  body.running .ring { animation: glow 2.4s ease-in-out infinite; }
+  @keyframes glow { 0%,100% { box-shadow: 0 0 30px -6px var(--accent); } 50% { box-shadow: 0 0 70px 0 var(--accent); } }
+
+  .row { display: flex; justify-content: center; gap: 12px; margin-top: 22px; }
+  .btn { border: 1px solid var(--line); background: rgba(255,255,255,.08); color: #fff; font-size: 15px; font-weight: 600;
+    padding: 13px 24px; border-radius: 16px; cursor: pointer; transition: transform .15s, background .2s, box-shadow .2s; }
+  .btn:hover { transform: translateY(-2px); background: rgba(255,255,255,.14); }
+  .btn:active { transform: scale(.96); }
+  .btn.primary { border: none; min-width: 130px; background: linear-gradient(135deg, var(--accent), var(--accent2));
+    box-shadow: 0 10px 30px -6px var(--accent); }
+  .btn.primary:hover { box-shadow: 0 14px 38px -4px var(--accent); }
+  #count { text-align: center; margin: 18px 0 0; font-size: 14px; opacity: .75; }
+  #count b { color: var(--accent2); }
+
+  .hidden { display: none !important; }
+  #swTime { text-align: center; font-size: 56px; font-weight: 800; font-variant-numeric: tabular-nums; margin: 18px 0 4px;
+    text-shadow: 0 0 28px var(--accent); }
+  #laps { list-style: none; margin: 14px 0 0; padding: 0; max-height: 150px; overflow: auto; font-variant-numeric: tabular-nums; }
+  #laps li { display: flex; justify-content: space-between; padding: 8px 6px; border-bottom: 1px solid var(--line); font-size: 14px; opacity: .85; }
+
+  .music { display: flex; align-items: center; gap: 14px; }
+  .disc { width: 56px; height: 56px; border-radius: 50%; flex: none;
+    background: conic-gradient(from 0deg, var(--accent), var(--accent2), #1f6bff, var(--accent));
+    display: flex; align-items: center; justify-content: center; box-shadow: 0 8px 24px -4px var(--accent); }
+  .disc::after { content: ""; width: 14px; height: 14px; border-radius: 50%; background: #0b0820; }
+  body.playing .disc { animation: spin 5s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .meta { flex: 1; min-width: 0; }
+  .meta .t { font-weight: 700; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .meta .s { font-size: 12px; opacity: .55; margin-top: 3px; }
+  .ctrl { display: flex; gap: 8px; }
+  .ico { width: 42px; height: 42px; border-radius: 50%; border: 1px solid var(--line); background: rgba(255,255,255,.08);
+    color: #fff; font-size: 16px; cursor: pointer; transition: transform .15s, background .2s; }
+  .ico:hover { transform: scale(1.08); background: rgba(255,255,255,.16); }
+  .ico.play { background: linear-gradient(135deg, var(--accent), var(--accent2)); border: none; }
+
+  .tasks h2 { margin: 0 0 14px; font-size: 18px; }
+  .addrow { display: flex; gap: 8px; }
+  .addrow input { flex: 1; min-width: 0; padding: 13px 14px; border-radius: 14px; border: 1px solid var(--line);
+    background: rgba(0,0,0,.25); color: #fff; font-size: 15px; outline: none; }
+  .addrow input::placeholder { color: rgba(255,255,255,.4); }
+  .addrow input:focus { border-color: var(--accent); }
+  #taskList { list-style: none; padding: 0; margin: 12px 0 0; }
+  #taskList li { display: flex; align-items: center; gap: 12px; padding: 11px 6px; border-bottom: 1px solid var(--line);
+    animation: fadeUp .35s ease both; }
+  #taskList li:last-child { border-bottom: none; }
+  #taskList li span { flex: 1; word-break: break-word; }
+  #taskList li.done span { text-decoration: line-through; opacity: .45; }
+  #taskList input[type=checkbox] { width: 20px; height: 20px; accent-color: var(--accent); }
+  #taskList li button { border: none; background: none; color: #ff7a90; font-size: 18px; cursor: pointer; }
+  footer { text-align: center; font-size: 12px; opacity: .4; margin-top: 4px; }
+</style>
+</head>
+<body>
+<div class="aurora"><div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div></div>
+<div class="stars"></div>
+
+<div class="app">
+  <header>
+    <h1>Nover Study Timer</h1>
+    <p class="sub">Focus &middot; Flow &middot; Finish</p>
+  </header>
+
+  <section class="card">
+    <div class="tabs">
+      <button id="tab-timer" class="active" onclick="showTab('timer')">Timer</button>
+      <button id="tab-sw" onclick="showTab('sw')">Stopwatch</button>
+    </div>
+
+    <div id="panel-timer">
+      <div class="tabs" style="margin-bottom:20px">
+        <button id="m-study" class="active" onclick="setMode('study')">Study 25</button>
+        <button id="m-break" onclick="setMode('break')">Break 5</button>
+      </div>
+      <div class="ring">
+        <svg width="270" height="270" viewBox="0 0 260 260">
+          <defs>
+            <linearGradient id="grad" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" id="g1" stop-color="#8b6cff"/>
+              <stop offset="100%" id="g2" stop-color="#c07bff"/>
+            </linearGradient>
+          </defs>
+          <circle class="bgc" cx="130" cy="130" r="115"></circle>
+          <circle class="fg" id="fg" cx="130" cy="130" r="115"></circle>
+        </svg>
+        <div id="time"><span id="timeText">25:00</span><span id="modeLabel">Focus</span></div>
+      </div>
+      <div class="row">
+        <button class="btn primary" id="start" onclick="toggle()">Start</button>
+        <button class="btn" onclick="reset()">Reset</button>
+      </div>
+      <p id="count"></p>
+    </div>
+
+    <div id="panel-sw" class="hidden">
+      <div id="swTime">00:00.0</div>
+      <div class="row" style="margin-top:12px">
+        <button class="btn primary" id="swStart" onclick="swToggle()">Start</button>
+        <button class="btn" onclick="swLap()">Lap</button>
+        <button class="btn" onclick="swReset()">Reset</button>
+      </div>
+      <ul id="laps"></ul>
+    </div>
+  </section>
+
+  <section class="card music" style="animation-delay:.1s">
+    <div class="disc"></div>
+    <div class="meta">
+      <div class="t" id="songName">Nafs El Hanen</div>
+      <div class="s" id="musicState">Music off</div>
+    </div>
+    <div class="ctrl">
+      <button class="ico" onclick="prevSong()" aria-label="Previous">&#9198;</button>
+      <button class="ico play" id="musicBtn" onclick="toggleMusic()" aria-label="Play">&#9654;</button>
+      <button class="ico" onclick="nextSong()" aria-label="Next">&#9197;</button>
+    </div>
+  </section>
+  <audio id="music" src="05._Nafs_El_Hanen.mp3" onended="nextSong()"></audio>
+
+  <section class="card tasks" style="animation-delay:.2s">
+    <h2>Tasks</h2>
+    <div class="addrow">
+      <input id="taskInput" placeholder="Add a task..." onkeydown="if(event.key==='Enter')addTask()">
+      <button class="btn primary" style="min-width:0;padding:13px 20px" onclick="addTask()">Add</button>
+    </div>
+    <ul id="taskList"></ul>
+  </section>
+  <footer>Made by Nover</footer>
+</div>
+
+<script>
+  /* ---------- Timer ---------- */
+  const MODES = { study: 25 * 60, break: 5 * 60 };
+  const CIRC = 2 * Math.PI * 115;
+  let mode = "study", left = MODES[mode], timer = null;
+  const fg = document.getElementById("fg");
+  fg.style.strokeDasharray = CIRC;
+
+  function today() { return new Date().toDateString(); }
+  function getSessions() {
+    const saved = JSON.parse(localStorage.getItem("sessions") || "{}");
+    return saved.day === today() ? saved.n : 0;
+  }
+  function addSession() {
+    localStorage.setItem("sessions", JSON.stringify({ day: today(), n: getSessions() + 1 }));
+  }
+  function render() {
+    const m = String(Math.floor(left / 60)).padStart(2, "0");
+    const s = String(left % 60).padStart(2, "0");
+    document.getElementById("timeText").textContent = m + ":" + s;
+    document.getElementById("modeLabel").textContent = mode === "study" ? "Focus" : "Rest";
+    document.title = m + ":" + s + " - Nover Study Timer";
+    fg.style.strokeDashoffset = CIRC * (1 - left / MODES[mode]);
+    document.getElementById("g1").setAttribute("stop-color", mode === "study" ? "#8b6cff" : "#2fd6a0");
+    document.getElementById("g2").setAttribute("stop-color", mode === "study" ? "#c07bff" : "#4aa8ff");
+    document.getElementById("count").innerHTML = "Sessions today: <b>" + getSessions() + "</b>";
+  }
+  function beep() {
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      [0, 0.25, 0.5].forEach(t => {
+        const o = ctx.createOscillator();
+        o.frequency.value = 880;
+        o.connect(ctx.destination);
+        o.start(ctx.currentTime + t);
+        o.stop(ctx.currentTime + t + 0.15);
+      });
+    } catch (e) {}
+  }
+  function setRunning(on) { document.body.classList.toggle("running", on); }
+  function tick() {
+    left--;
+    if (left <= 0) {
+      clearInterval(timer); timer = null; setRunning(false);
+      beep();
+      if (mode === "study") addSession();
+      document.getElementById("start").textContent = "Start";
+      setMode(mode === "study" ? "break" : "study");
+      return;
+    }
+    render();
+  }
+  function toggle() {
+    if (timer) {
+      clearInterval(timer); timer = null; setRunning(false);
+      document.getElementById("start").textContent = "Start";
+    } else {
+      timer = setInterval(tick, 1000); setRunning(true);
+      document.getElementById("start").textContent = "Pause";
+    }
+  }
+  function reset() {
+    clearInterval(timer); timer = null; setRunning(false);
+    left = MODES[mode];
+    document.getElementById("start").textContent = "Start";
+    render();
+  }
+  function setMode(m) {
+    mode = m;
+    document.body.classList.toggle("break", m === "break");
+    document.getElementById("m-study").classList.toggle("active", m === "study");
+    document.getElementById("m-break").classList.toggle("active", m === "break");
+    reset();
+  }
+
+  /* ---------- Tabs ---------- */
+  function showTab(t) {
+    document.getElementById("panel-timer").classList.toggle("hidden", t !== "timer");
+    document.getElementById("panel-sw").classList.toggle("hidden", t !== "sw");
+    document.getElementById("tab-timer").classList.toggle("active", t === "timer");
+    document.getElementById("tab-sw").classList.toggle("active", t === "sw");
+  }
+
+  /* ---------- Stopwatch ---------- */
+  let swMs = 0, swTimer = null, swStartAt = 0, lapCount = 0;
+  function fmt(ms) {
+    const t = Math.floor(ms / 100);
+    const tenth = t % 10;
+    const s = Math.floor(t / 10) % 60;
+    const m = Math.floor(t / 600);
+    return String(m).padStart(2, "0") + ":" + String(s).padStart(2, "0") + "." + tenth;
+  }
+  function swRender() { document.getElementById("swTime").textContent = fmt(swMs); }
+  function swToggle() {
+    const btn = document.getElementById("swStart");
+    if (swTimer) {
+      clearInterval(swTimer); swTimer = null; btn.textContent = "Start";
+    } else {
+      swStartAt = Date.now() - swMs;
+      swTimer = setInterval(() => { swMs = Date.now() - swStartAt; swRender(); }, 50);
+      btn.textContent = "Pause";
+    }
+  }
+  function swLap() {
+    if (!swMs) return;
+    lapCount++;
+    const li = document.createElement("li");
+    li.innerHTML = "<span>Lap " + lapCount + "</span><span>" + fmt(swMs) + "</span>";
+    document.getElementById("laps").prepend(li);
+  }
+  function swReset() {
+    clearInterval(swTimer); swTimer = null; swMs = 0; lapCount = 0;
+    document.getElementById("laps").innerHTML = "";
+    document.getElementById("swStart").textContent = "Start";
+    swRender();
+  }
+
+  /* ---------- Tasks ---------- */
+  let tasks = JSON.parse(localStorage.getItem("tasks") || "[]");
+  function saveTasks() { localStorage.setItem("tasks", JSON.stringify(tasks)); }
+  function renderTasks() {
+    const list = document.getElementById("taskList");
+    list.innerHTML = "";
+    tasks.forEach((t, i) => {
+      const li = document.createElement("li");
+      if (t.done) li.classList.add("done");
+      const box = document.createElement("input");
+      box.type = "checkbox"; box.checked = t.done;
+      box.onchange = () => { tasks[i].done = box.checked; saveTasks(); renderTasks(); };
+      const text = document.createElement("span");
+      text.textContent = t.text;
+      const del = document.createElement("button");
+      del.textContent = "\u2715";
+      del.onclick = () => { tasks.splice(i, 1); saveTasks(); renderTasks(); };
+      li.append(box, text, del);
+      list.appendChild(li);
+    });
+  }
+  function addTask() {
+    const input = document.getElementById("taskInput");
+    const value = input.value.trim();
+    if (!value) return;
+    tasks.push({ text: value, done: false });
+    input.value = "";
+    saveTasks(); renderTasks();
+  }
+
+  /* ---------- Music ---------- */
+  const songs = ["05._Nafs_El_Hanen.mp3", "06._Ya_3youn.mp3", "10.Ya_Wa7shny.mp3"];
+  const names = ["Nafs El Hanen", "Ya 3youn", "Ya Wa7shny"];
+  let songIndex = 0;
+  function musicUI() {
+    const audio = document.getElementById("music");
+    document.getElementById("songName").textContent = names[songIndex];
+    document.getElementById("musicState").textContent = audio.paused ? "Music off" : "Now playing";
+    document.getElementById("musicBtn").innerHTML = audio.paused ? "&#9654;" : "&#10074;&#10074;";
+    document.body.classList.toggle("playing", !audio.paused);
+  }
+  function loadSong(i, play) {
+    const audio = document.getElementById("music");
+    songIndex = (i + songs.length) % songs.length;
+    audio.src = songs[songIndex];
+    if (play) audio.play();
+    musicUI();
+  }
+  function nextSong() { loadSong(songIndex + 1, true); }
+  function prevSong() { loadSong(songIndex - 1, true); }
+  function toggleMusic() {
+    const audio = document.getElementById("music");
+    if (audio.paused) audio.play(); else audio.pause();
+    musicUI();
+  }
+  document.getElementById("music").addEventListener("play", musicUI);
+  document.getElementById("music").addEventListener("pause", musicUI);
+
+  renderTasks();
+  setMode("study");
+  musicUI();
+
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
+  }
+</script>
+</body>
+</html>
